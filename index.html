@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đấu Trường Amine - Hóa Học 12</title>
+    <!-- Nạp Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Nạp Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+    <!-- Nạp Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Nạp Tone.js cho hiệu ứng âm thanh (Không dùng link ngoài) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Tông màu nền Vàng - Cam - Nâu tươi sáng */
+            background: linear-gradient(135deg, #fef3c7, #fde68a, #f59e0b);
+            color: #451a03; /* Màu nâu đậm */
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, .brand-font {
+            font-family: 'Nunito', sans-serif;
+        }
+        
+        /* Hiệu ứng rung khi trả lời sai */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.5s; }
+
+        /* Hiệu ứng nảy */
+        @keyframes bounce-in {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .bounce-in {
+            animation: bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        }
+
+        /* Hiệu ứng fade-in mượt mà */
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Nút lựa chọn (Options) */
+        .option-btn {
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+        .option-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            background: rgba(69, 26, 3, 0.6); /* Nâu đen mờ */
+            backdrop-filter: blur(4px);
+        }
+
+        /* Confetti canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 100;
+        }
+
+        /* Custom scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: rgba(251, 191, 36, 0.2); border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.6); border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(217, 119, 6, 0.8); }
+    </style>
+</head>
+<body class="flex items-center justify-center relative">
+    
+    <!-- Canvas pháo hoa -->
+    <canvas id="confetti-canvas" class="hidden"></canvas>
+
+    <!-- MÀN HÌNH 1: ĐĂNG NHẬP -->
+    <div id="screen-login" class="w-full max-w-md p-8 bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-amber-300 text-center fade-in relative overflow-hidden">
+        <div class="absolute top-[-50px] right-[-50px] w-32 h-32 bg-amber-300 rounded-full mix-blend-multiply filter blur-2xl opacity-50"></div>
+        <div class="absolute bottom-[-50px] left-[-50px] w-32 h-32 bg-yellow-400 rounded-full mix-blend-multiply filter blur-2xl opacity-50"></div>
+        
+        <div class="mb-6 relative z-10">
+            <div class="inline-block p-4 bg-amber-100 rounded-full mb-4 shadow-inner">
+                <i class="fa-solid fa-flask text-5xl text-amber-600 drop-shadow-md"></i>
+            </div>
+            <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-600 brand-font mb-2">ĐẤU TRƯỜNG AMINE</h1>
+            <p class="text-md font-semibold text-amber-800">Khám phá thế giới Hóa học 12</p>
+        </div>
+        
+        <div class="space-y-4 mb-8 text-left relative z-10">
+            <div>
+                <label class="block text-sm font-bold text-amber-900 mb-1">Họ và tên chiến binh:</label>
+                <input type="text" id="player-name" placeholder="Ví dụ: Nguyễn Văn A" class="w-full px-4 py-3 bg-white/90 border-2 border-amber-200 rounded-xl focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 text-amber-950 font-medium placeholder-amber-900/40 transition-all shadow-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-amber-900 mb-1">Lớp:</label>
+                <input type="text" id="player-class" placeholder="Ví dụ: 12A1" class="w-full px-4 py-3 bg-white/90 border-2 border-amber-200 rounded-xl focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 text-amber-950 font-medium placeholder-amber-900/40 transition-all shadow-sm">
+            </div>
+        </div>
+
+        <div class="bg-amber-50 p-4 rounded-xl mb-6 text-sm text-left border border-amber-200 text-amber-900 relative z-10">
+            <h3 class="font-bold text-amber-700 mb-2 text-base"><i class="fa-solid fa-scroll mr-2"></i>Luật chơi:</h3>
+            <ul class="list-disc pl-5 space-y-1 font-medium">
+                <li>Gồm <strong>4 vòng</strong> (Dễ, TB, Khó, Cực Khó).</li>
+                <li>Mỗi vòng có <strong>10 câu hỏi</strong>.</li>
+                <li>Trả lời đúng: <strong class="text-green-600">+1 điểm (Tự động đi tiếp)</strong>.</li>
+                <li>Trả lời sai: <strong class="text-red-500">-0.5 điểm</strong> và phải <strong class="text-amber-700">trả lời lại</strong>.</li>
+            </ul>
+        </div>
+
+        <button onclick="startGame()" class="relative z-10 w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-black rounded-xl shadow-lg hover:shadow-orange-500/40 transition-all transform hover:scale-[1.02] active:scale-95 text-xl tracking-wide border border-orange-400">
+            BẮT ĐẦU CHIẾN ĐẤU <i class="fa-solid fa-bolt ml-2"></i>
+        </button>
+        <button onclick="showLeaderboardFromLogin()" class="relative z-10 w-full mt-3 py-3 bg-white hover:bg-amber-50 text-amber-700 font-bold rounded-xl transition-all border border-amber-200 shadow-sm">
+            Xem Bảng Xếp Hạng <i class="fa-solid fa-trophy ml-1 text-amber-500"></i>
+        </button>
+    </div>
+
+    <!-- MÀN HÌNH 2: TRÒ CHƠI -->
+    <div id="screen-game" class="w-full max-w-3xl p-4 sm:p-6 hidden">
+        <!-- Header thông tin -->
+        <div class="flex justify-between items-end mb-6 bg-white/90 backdrop-blur-md p-5 rounded-2xl border-2 border-amber-300 shadow-lg">
+            <div>
+                <p class="text-xs text-amber-700 uppercase tracking-wider font-extrabold mb-1"><i class="fa-solid fa-user-astronaut mr-1"></i>Chiến binh</p>
+                <p class="text-xl font-black text-amber-900"><span id="display-name">---</span> <span class="text-sm font-semibold text-amber-700">(Lớp: <span id="display-class">---</span>)</span></p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-amber-700 uppercase tracking-wider font-extrabold mb-1"><i class="fa-solid fa-star mr-1"></i>Điểm số</p>
+                <p class="text-4xl font-black brand-font text-orange-600 drop-shadow-sm" id="display-score">0</p>
+            </div>
+        </div>
+
+        <!-- Vùng câu hỏi -->
+        <div class="bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-2xl border-2 border-amber-300 mb-6 relative">
+            <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-orange-500 to-amber-500 px-8 py-2 rounded-full shadow-lg border-2 border-white">
+                <p class="text-sm font-black brand-font tracking-widest text-white uppercase">Vòng <span id="display-round">1</span> - Câu <span id="display-question-num">1</span>/10</p>
+            </div>
+            
+            <div class="mt-6 mb-8">
+                <h2 id="question-text" class="text-xl sm:text-2xl font-bold leading-relaxed text-center min-h-[80px] flex items-center justify-center text-amber-950">
+                    Đang tải câu hỏi...
+                </h2>
+            </div>
+
+            <!-- Các lựa chọn -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="options-container">
+                <!-- Nút bấm tạo bằng JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH 3: KẾT THÚC VÒNG -->
+    <div id="screen-round-end" class="w-full max-w-md p-8 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-amber-300 text-center hidden fade-in">
+        <div class="inline-block p-5 bg-orange-100 rounded-full mb-4 shadow-inner">
+            <i class="fa-solid fa-shield-cat text-6xl text-orange-500 drop-shadow-md"></i>
+        </div>
+        <h2 class="text-3xl font-black brand-font text-amber-900 mb-2">HOÀN THÀNH VÒNG <span id="end-round-num">1</span></h2>
+        <p class="text-amber-700 font-medium mb-6">Bạn đã vượt qua thử thách. Hãy sẵn sàng cho khó khăn tiếp theo!</p>
+        
+        <div class="bg-amber-50 rounded-2xl p-6 mb-8 border border-amber-200 shadow-inner">
+            <p class="text-sm text-amber-800 font-bold uppercase mb-2">Điểm hiện tại</p>
+            <p class="text-5xl font-black text-orange-600 brand-font drop-shadow-sm" id="round-end-score">0</p>
+        </div>
+
+        <button onclick="startNextRound()" class="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-black rounded-xl shadow-lg transition-all transform hover:scale-[1.02] active:scale-95 text-lg tracking-wide border border-orange-400">
+            TIẾN VÀO VÒNG TIẾP THEO <i class="fa-solid fa-forward-step ml-2"></i>
+        </button>
+    </div>
+
+    <!-- MÀN HÌNH 4: KẾT THÚC TRÒ CHƠI -->
+    <div id="screen-game-over" class="w-full max-w-md p-8 bg-gradient-to-b from-white/95 to-amber-50/95 backdrop-blur-md rounded-3xl shadow-[0_0_50px_rgba(245,158,11,0.5)] border-4 border-amber-400 text-center hidden relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400"></div>
+        <i class="fa-solid fa-crown text-7xl text-amber-500 mb-6 drop-shadow-[0_4px_10px_rgba(245,158,11,0.4)] bounce-in"></i>
+        <h2 class="text-4xl font-black brand-font text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-600 mb-3">CHIẾN THẮNG!</h2>
+        <p class="text-amber-800 font-medium mb-6 text-lg">Chúc mừng <strong id="final-name" class="text-amber-950 font-black"></strong> đã hoàn thành xuất sắc 4 vòng thi!</p>
+        
+        <div class="bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl p-6 mb-8 border-2 border-amber-300 shadow-inner">
+            <p class="text-sm text-amber-800 font-bold uppercase mb-2">Tổng điểm cuối cùng</p>
+            <p class="text-6xl font-black text-orange-600 brand-font drop-shadow-md" id="final-score">0</p>
+        </div>
+
+        <button onclick="showLeaderboard()" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-black rounded-xl shadow-[0_8px_20px_rgba(245,158,11,0.4)] transition-all transform hover:scale-[1.02] active:scale-95 text-xl border border-orange-400">
+            XEM BẢNG XẾP HẠNG <i class="fa-solid fa-list-ol ml-2"></i>
+        </button>
+    </div>
+
+    <!-- MÀN HÌNH 5: BẢNG XẾP HẠNG -->
+    <div id="screen-leaderboard" class="w-full max-w-lg p-6 sm:p-8 bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-amber-300 hidden fade-in flex flex-col max-h-[90vh]">
+        <div class="text-center mb-6">
+            <i class="fa-solid fa-trophy text-5xl text-amber-500 mb-3 drop-shadow-md"></i>
+            <h2 class="text-3xl font-black brand-font text-amber-900">BẢNG XẾP HẠNG</h2>
+            <p class="text-sm font-bold text-amber-700 mt-1">Những nhà hóa học xuất sắc nhất</p>
+        </div>
+
+        <div class="bg-amber-50 rounded-2xl overflow-hidden border-2 border-amber-200 flex-grow overflow-y-auto custom-scroll mb-6 shadow-inner">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-amber-200/50 sticky top-0 backdrop-blur-sm shadow-sm z-10">
+                    <tr>
+                        <th class="px-4 py-3 text-sm font-black text-amber-900 w-16 text-center uppercase tracking-wider">Hạng</th>
+                        <th class="px-4 py-3 text-sm font-black text-amber-900 uppercase tracking-wider">Chiến binh</th>
+                        <th class="px-4 py-3 text-sm font-black text-amber-900 text-right uppercase tracking-wider">Điểm</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body" class="divide-y divide-amber-200/50">
+                    <!-- JS Insert -->
+                </tbody>
+            </table>
+        </div>
+
+        <button onclick="resetToLogin()" class="w-full py-4 bg-white hover:bg-amber-100 text-amber-800 font-bold rounded-xl transition-all border-2 border-amber-300 shadow-sm text-lg">
+            <i class="fa-solid fa-rotate-left mr-2"></i> Chơi Lại Từ Đầu
+        </button>
+    </div>
+
+    <!-- MODAL THÔNG BÁO SAI (Chỉ hiển thị khi sai) -->
+    <div id="feedback-modal" class="fixed inset-0 modal-overlay hidden flex items-center justify-center z-50 px-4">
+        <div id="feedback-content" class="bg-white text-gray-900 w-full max-w-sm rounded-3xl p-8 text-center shadow-2xl transform scale-95 transition-transform duration-200 border-4 border-red-500 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-red-500"></div>
+            <div id="feedback-icon" class="text-7xl mb-4"><i class="fa-solid fa-circle-xmark text-red-500 shake drop-shadow-md"></i></div>
+            <h3 id="feedback-title" class="text-3xl font-black brand-font mb-2 text-red-600">SAI RỒI!</h3>
+            <p id="feedback-message" class="text-amber-900 font-medium mb-8 text-base">Bị trừ 0.5 điểm. Bạn phải trả lời lại câu này để đi tiếp.</p>
+            <button id="feedback-btn" class="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl shadow-lg transition-all active:scale-95 text-lg tracking-wide border border-red-600">
+                THỬ LẠI <i class="fa-solid fa-rotate-right ml-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- DỮ LIỆU CÂU HỎI ---
+        const round1 = [
+            { q: "Chất nào sau đây là amine?", o: ["C2H5NH2", "HCOOH", "C2H5OH", "CH3COOC2H5"], a: 0 },
+            { q: "Phân tử chất nào sau đây chứa nguyên tử nitrogen?", o: ["Acetic acid", "Methylamine", "Tinh bột", "Glucose"], a: 1 },
+            { q: "Công thức chung của amine no, đơn chức, mạch hở là gì?", o: ["CnH2n-5N (n ≥ 6)", "CnH2n+1N (n ≥ 2)", "CnH2n-1N (n ≥ 2)", "CnH2n+3N (n ≥1)"], a: 3 },
+            { q: "Chất nào sau đây thuộc loại amine bậc ba?", o: ["C2H5-NH2", "CH3-NH-CH3", "(CH3)3N", "CH3-NH2"], a: 2 },
+            { q: "Trong các chất dưới đây, chất nào là amine bậc hai?", o: ["H2N[CH2]6NH2", "CH3NHCH3", "(CH3)2CHNH2", "C6H5NH2"], a: 1 },
+            { q: "Chất nào sau đây là amine bậc một?", o: ["CH3NHC2H5", "(CH3)2NH", "(C2H5)3N", "C6H5NH2"], a: 3 },
+            { q: "Công thức phân tử của ethylamine là gì?", o: ["C4H11N", "CH5N", "C2H7N", "C3H9N"], a: 2 },
+            { q: "Chất X có công thức CH3NH2. Tên gọi của X là gì?", o: ["Trimethylamine", "Ethylamine", "Dimethylamine", "Methylamine"], a: 3 },
+            { q: "Hợp chất C2H5NHC2H5 có tên là gì?", o: ["Ethylmethylamine", "Diethylamine", "Propylamine", "Dimethylamine"], a: 1 },
+            { q: "Dung dịch chất nào sau đây KHÔNG làm quỳ tím chuyển màu?", o: ["Ethylamine", "Methylamine", "Aniline", "Trimethylamine"], a: 2 }
+        ];
+
+        const round2 = [
+            { q: "Số amine thơm bậc một ứng với công thức phân tử C7H9N là?", o: ["2", "3", "4", "5"], a: 1 },
+            { q: "Số đồng phân cấu tạo của amine bậc một có cùng công thức phân tử C4H11N là?", o: ["2", "3", "4", "5"], a: 2 },
+            { q: "Số amine có công thức phân tử C3H9N là bao nhiêu?", o: ["2", "3", "4", "5"], a: 2 },
+            { q: "Trong các đồng phân cấu tạo của amine có công thức C3H9N, số amine bậc hai là?", o: ["0", "1", "2", "3"], a: 1 },
+            { q: "Có bao nhiêu amine bậc ba là đồng phân cấu tạo của nhau ứng với C5H13N?", o: ["2", "3", "4", "5"], a: 1 },
+            { q: "Ethylamine tác dụng được với chất nào sau đây trong dung dịch?", o: ["K2SO4", "NaOH", "HCl", "KCl"], a: 2 },
+            { q: "Nhỏ vài giọt nước bromine vào ống nghiệm chứa aniline, hiện tượng quan sát được là?", o: ["Xuất hiện màu xanh", "Xuất hiện màu tím", "Có bọt khí thoát ra", "Có kết tủa màu trắng"], a: 3 },
+            { q: "Chất phản ứng với dung dịch FeCl3 cho kết tủa là?", o: ["CH3NH2", "CH3COOCH3", "CH3OH", "CH3COOH"], a: 0 },
+            { q: "Aniline và phenol đều có phản ứng với chất nào dưới đây?", o: ["Dung dịch NaCl", "Nước Br2", "Dung dịch HCl", "Dung dịch NaOH"], a: 1 },
+            { q: "Amine thường được phân loại dựa theo tiêu chí nào?", o: ["Bậc amine và số nguyên tử Carbon", "Bản chất gốc hydrocarbon", "Bậc amine và bản chất gốc hydrocarbon", "Khối lượng phân tử"], a: 2 }
+        ];
+
+        const round3 = [
+            { q: "Phát biểu nào sau đây KHÔNG đúng?", o: ["CH3CH2NHCH3 là amine bậc 1.", "Công thức chung amine no mạch hở: CnH2n+3N.", "C6H5NH2 là arylamine bậc 1.", "Trong alkylamine, mật độ e trên N cao hơn so với NH3."], a: 0 },
+            { q: "Phát biểu nào sau đây đúng?", o: ["Arylamine có nhóm NH2 liên kết với gốc alkyl.", "Arylamine có nhóm amine liên kết trực tiếp với nguyên tử C của vòng benzene.", "C6H5CH2NH2 là arylamine.", "Tất cả các amine đều làm quỳ tím hóa xanh."], a: 1 },
+            { q: "Phát biểu nào sau đây đúng về tính chất vật lý của amine?", o: ["Tất cả amine đều tan nhiều trong nước.", "Amine có nhiệt độ sôi CAO HƠN hydrocarbon có cùng số C.", "Aniline tan rất tốt trong nước ở đktc.", "Khi số C tăng thì độ tan của amine tăng."], a: 1 },
+            { q: "Nicotine là một amine độc có trong thuốc lá. Phát biểu nào đúng về nicotine?", o: ["Nicotine thuộc loại arylamine.", "Nicotine là một amine bậc 3.", "Công thức phân tử là C10H16N2.", "Không hòa tan được trong nước."], a: 1 },
+            { q: "Mùi tanh của cá chủ yếu do trimethylamine. Để khử mùi, người ta thường dùng gì?", o: ["Nước muối sinh lý", "Nước vôi trong", "Giấm ăn", "Dung dịch sôđa"], a: 2 },
+            { q: "Cho các chất: CH3NH2, NH3, C6H5OH, C6H5NH2. Dãy sắp xếp theo tính base TĂNG dần là?", o: ["C6H5OH < C6H5NH2 < NH3 < CH3NH2", "C6H5OH < NH3 < C6H5NH2 < CH3NH2", "NH3 < CH3NH2 < C6H5NH2 < C6H5OH", "C6H5NH2 < C6H5OH < NH3 < CH3NH2"], a: 0 },
+            { q: "Cho X (C2H8O3N2) tác dụng với NaOH thu được chất hữu cơ đơn chức Y. Khối lượng phân tử của Y là?", o: ["31", "45", "59", "73"], a: 1 },
+            { q: "Nhận xét nào ĐÚNG về phản ứng thế của Aniline?", o: ["Nhóm NH2 làm giảm khả năng phản ứng thế.", "Phản ứng thế ưu tiên vị trí meta.", "Aniline khó phản ứng thế H vòng benzene hơn so với benzene.", "Phản ứng thế ưu tiên ở các vị trí ortho- và para-."], a: 3 },
+            { q: "Ứng với C2H7O2N có bao nhiêu chất vừa phản ứng với NaOH, vừa phản ứng với HCl?", o: ["1", "2", "3", "4"], a: 1 },
+            { q: "Chất X có công thức phân tử C3H9O2N. X + NaOH (to) -> muối Y (M_Y < M_X). X KHÔNG THỂ là:", o: ["CH3CH2COONH4", "CH3COONH3CH3", "HCOONH2(CH3)2", "HCOONH3CH2CH3"], a: 0 }
+        ];
+
+        const round4 = [
+            { q: "Phát biểu nào SAI khi nói về phản ứng của amine với HNO2?", o: ["Alkylamine bậc 1 + HNO2 (to thường) -> alcohol + N2.", "Aniline + HNO2 (0-5oC) -> muối diazonium.", "Ethylamine + HNO2 (to thường) -> methyl alcohol.", "Có thể dùng HNO2 phân biệt alkylamine bậc 1 và arylamine bậc 1."], a: 2 },
+            { q: "Thí nghiệm: Nhỏ methylamine vào dd FeCl3. Hiện tượng và kết luận nào đúng?", o: ["Kết tủa trắng, chứng minh tính base.", "Kết tủa nâu đỏ, chứng minh tính base.", "Kết tủa nâu đỏ, chứng minh tính khử.", "Kết tủa xanh lam, chứng minh tạo phức."], a: 1 },
+            { q: "Thí nghiệm: Nhỏ TỪ TỪ ĐẾN DƯ methylamine vào CuSO4. Hiện tượng là gì?", o: ["Chỉ có kết tủa xanh lam.", "Lúc đầu kết tủa xanh, sau đó kết tủa tan tạo dung dịch xanh lam.", "Xuất hiện kết tủa trắng.", "Kết tủa nâu đỏ xuất hiện rồi tan."], a: 1 },
+            { q: "Cho dãy: phenol, aniline, phenylammonium chloride, sodium phenolate, ethanol. Số chất phản ứng với NaOH là?", o: ["1", "2", "3", "4"], a: 1 },
+            { q: "Cho dãy: CH4, C2H2, C2H4, C2H5OH, CH2=CH-COOH, C6H5NH2, C6H5OH, C6H6. Số chất phản ứng với nước Br2 là?", o: ["4", "5", "6", "7"], a: 1 },
+            { q: "Ephedrine là hợp chất điều trị cảm. Nhận định nào ĐÚNG về Ephedrine?", o: ["Là amine bậc 1.", "Chứa nhóm hydroxyl (-OH) ở C bậc 2.", "Chỉ có tính base, không có tính khử.", "Tên thay thế là aniline."], a: 1 },
+            { q: "Amine X có phân tử khối < 80, %N = 19,18%. X + HNO2 -> alcohol Y. Tách nước Y thu được 1 alkene duy nhất. Tên X là?", o: ["Propyl amine", "Isopropyl amine", "Butyl amine", "Isobutyl amine"], a: 2 },
+            { q: "Kết quả thí nghiệm: X làm xanh quỳ tím; Y tráng bạc; Z tạo kết tủa trắng với nước Br2. X, Y, Z lần lượt là:", o: ["Aniline, glucose, ethylamine", "Ethylamine, glucose, aniline", "Ethylamine, aniline, glucose", "Glucose, ethylamine, aniline"], a: 1 },
+            { q: "Để rửa sạch ống nghiệm có dính aniline, người ta thường tráng ống nghiệm bằng?", o: ["Nước cất", "Dung dịch NaOH", "Dung dịch HCl sau đó rửa lại bằng nước", "Cồn 90 độ"], a: 2 },
+            { q: "Khi nhỏ aniline vào nước Br2 tạo kết tủa trắng là chất gì?", o: ["2,4-dibromoaniline", "2,4,6-tribromoaniline", "o-bromoaniline", "p-bromoaniline"], a: 1 }
+        ];
+
+        const allRounds = [round1, round2, round3, round4];
+
+        // --- TONE.JS ÂM THANH ---
+        let synth = null;
+        let isAudioInit = false;
+
+        async function initAudio() {
+            if (!isAudioInit) {
+                await Tone.start();
+                synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                // Giảm âm lượng để không bị chói
+                synth.volume.value = -5; 
+                isAudioInit = true;
+            }
+        }
+
+        function playCorrectSound() {
+            if (synth) {
+                const now = Tone.now();
+                synth.triggerAttackRelease("E5", "8n", now);
+                synth.triggerAttackRelease("C6", "4n", now + 0.15);
+            }
+        }
+
+        function playErrorSound() {
+            if (synth) {
+                synth.triggerAttackRelease(["C3", "D#3"], "4n");
+            }
+        }
+
+        function playVictorySound() {
+            if (synth) {
+                const now = Tone.now();
+                // Fanfare nhỏ
+                synth.triggerAttackRelease("C4", "8n", now);
+                synth.triggerAttackRelease("E4", "8n", now + 0.2);
+                synth.triggerAttackRelease("G4", "8n", now + 0.4);
+                synth.triggerAttackRelease("C5", "2n", now + 0.6);
+            }
+        }
+
+        // --- BIẾN TRẠNG THÁI ---
+        let currentRound = 1;
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let playerName = "";
+        let playerClass = "";
+        let currentQuestionSet = [];
+        let leaderboardData = JSON.parse(localStorage.getItem('amineLeaderboard2')) || [];
+        let questionLock = false; // Ngăn chặn bấm nhiều lần liên tiếp
+
+        // --- CÁC PHẦN TỬ DOM ---
+        const screens = {
+            login: document.getElementById('screen-login'),
+            game: document.getElementById('screen-game'),
+            roundEnd: document.getElementById('screen-round-end'),
+            gameOver: document.getElementById('screen-game-over'),
+            leaderboard: document.getElementById('screen-leaderboard')
+        };
+        const modal = {
+            overlay: document.getElementById('feedback-modal'),
+            btn: document.getElementById('feedback-btn')
+        };
+        let modalCallback = null;
+
+        function hideAllScreens() {
+            Object.values(screens).forEach(screen => {
+                screen.classList.add('hidden');
+                screen.classList.remove('fade-in');
+            });
+        }
+
+        function showScreen(screenName) {
+            hideAllScreens();
+            screens[screenName].classList.remove('hidden');
+            void screens[screenName].offsetWidth; 
+            screens[screenName].classList.add('fade-in');
+        }
+
+        async function startGame() {
+            const nameInput = document.getElementById('player-name').value.trim();
+            const classInput = document.getElementById('player-class').value.trim();
+
+            if (!nameInput || !classInput) {
+                // Rung nhẹ ô input nếu thiếu
+                document.getElementById('player-name').classList.add('shake');
+                document.getElementById('player-class').classList.add('shake');
+                setTimeout(() => {
+                    document.getElementById('player-name').classList.remove('shake');
+                    document.getElementById('player-class').classList.remove('shake');
+                }, 500);
+                return;
+            }
+
+            // Khởi tạo Audio context với hành động click của user
+            await initAudio();
+
+            playerName = nameInput;
+            playerClass = classInput;
+            document.getElementById('display-name').textContent = playerName;
+            document.getElementById('display-class').textContent = playerClass;
+
+            currentRound = 1;
+            score = 0;
+            updateScoreDisplay();
+            startRound();
+        }
+
+        function startRound() {
+            currentQuestionIndex = 0;
+            currentQuestionSet = [...allRounds[currentRound - 1]]; 
+            
+            document.getElementById('display-round').textContent = currentRound;
+            showScreen('game');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            questionLock = false; // Mở khóa cho câu hỏi mới
+            const qData = currentQuestionSet[currentQuestionIndex];
+            document.getElementById('display-question-num').textContent = currentQuestionIndex + 1;
+            document.getElementById('question-text').textContent = qData.q;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            // Render các nút lựa chọn
+            qData.o.forEach((optText, index) => {
+                const btn = document.createElement('button');
+                // Style mặc định màu sáng
+                btn.className = "option-btn w-full text-left p-4 bg-[#FFF9E6] border-2 border-amber-300 hover:bg-[#FFE082] rounded-2xl text-amber-950 font-bold break-words leading-snug";
+                
+                const labels = ['A', 'B', 'C', 'D'];
+                btn.innerHTML = `<span class="inline-block w-8 h-8 rounded-full bg-amber-500/20 text-amber-700 text-center leading-8 font-black mr-3 border-2 border-amber-500/30">${labels[index]}</span> ${optText}`;
+                
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (questionLock) return; // Nếu đang xử lý thì chặn click
+            questionLock = true;
+
+            const qData = currentQuestionSet[currentQuestionIndex];
+            const isCorrect = (selectedIndex === qData.a);
+
+            // Disable các nút
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(b => b.disabled = true);
+
+            if (isCorrect) {
+                // ĐÚNG: Nút chuyển xanh, phát nhạc, TỰ ĐỘNG ĐI TIẾP
+                btnElement.classList.remove('bg-[#FFF9E6]', 'border-amber-300', 'hover:bg-[#FFE082]', 'text-amber-950');
+                btnElement.classList.add('bg-green-500', 'border-green-600', 'text-white', 'bounce-in');
+                
+                // Thay màu chữ của nhãn (A,B,C,D) bên trong thành trắng
+                const labelSpan = btnElement.querySelector('span');
+                labelSpan.className = "inline-block w-8 h-8 rounded-full bg-white/30 text-white text-center leading-8 font-black mr-3 border-2 border-white/40";
+                
+                playCorrectSound();
+                score += 1;
+                updateScoreDisplay();
+                
+                // Đợi 0.8s cho user nhìn thấy đáp án đúng, rồi auto advance
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex < 10) {
+                        loadQuestion();
+                    } else {
+                        endRound();
+                    }
+                }, 800);
+
+            } else {
+                // SAI: Nút chuyển đỏ rung, phát nhạc báo lỗi, MỞ MODAL BẮT THỬ LẠI
+                btnElement.classList.remove('bg-[#FFF9E6]', 'border-amber-300', 'hover:bg-[#FFE082]', 'text-amber-950');
+                btnElement.classList.add('bg-red-500', 'border-red-600', 'text-white', 'shake');
+                
+                const labelSpan = btnElement.querySelector('span');
+                labelSpan.className = "inline-block w-8 h-8 rounded-full bg-white/30 text-white text-center leading-8 font-black mr-3 border-2 border-white/40";
+                
+                playErrorSound();
+                score -= 0.5;
+                updateScoreDisplay();
+                
+                showErrorModal(() => {
+                    // Reset UI nút bấm để trả lời lại
+                    questionLock = false;
+                    allBtns.forEach(b => {
+                        b.disabled = false;
+                        b.className = "option-btn w-full text-left p-4 bg-[#FFF9E6] border-2 border-amber-300 hover:bg-[#FFE082] rounded-2xl text-amber-950 font-bold break-words leading-snug";
+                        
+                        const innerSpan = b.querySelector('span');
+                        innerSpan.className = "inline-block w-8 h-8 rounded-full bg-amber-500/20 text-amber-700 text-center leading-8 font-black mr-3 border-2 border-amber-500/30";
+                    });
+                });
+            }
+        }
+
+        function updateScoreDisplay() {
+            const displayScore = score % 1 === 0 ? score : score.toFixed(1);
+            document.getElementById('display-score').textContent = displayScore;
+        }
+
+        function endRound() {
+            playVictorySound();
+            if (currentRound < 4) {
+                document.getElementById('end-round-num').textContent = currentRound;
+                document.getElementById('round-end-score').textContent = score % 1 === 0 ? score : score.toFixed(1);
+                showScreen('roundEnd');
+            } else {
+                endGame();
+            }
+        }
+
+        function startNextRound() {
+            currentRound++;
+            startRound();
+        }
+
+        function endGame() {
+            triggerConfetti();
+            playVictorySound();
+            
+            const displayScore = score % 1 === 0 ? score : score.toFixed(1);
+            document.getElementById('final-name').textContent = playerName;
+            document.getElementById('final-score').textContent = displayScore;
+            
+            saveToLeaderboard(playerName, playerClass, score);
+            showScreen('gameOver');
+        }
+
+        function saveToLeaderboard(name, cls, finalScore) {
+            leaderboardData.push({
+                name: name,
+                class: cls,
+                score: finalScore,
+                date: new Date().getTime()
+            });
+            // Sắp xếp: Cao trước
+            leaderboardData.sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                return a.date - b.date;
+            });
+            if(leaderboardData.length > 50) leaderboardData = leaderboardData.slice(0, 50);
+            
+            localStorage.setItem('amineLeaderboard2', JSON.stringify(leaderboardData));
+        }
+
+        function renderLeaderboard() {
+            const tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = '';
+            
+            if(leaderboardData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-8 text-amber-700 font-semibold italic">Chưa có ai tham gia. Bạn hãy là người đầu tiên!</td></tr>`;
+                return;
+            }
+
+            leaderboardData.forEach((player, index) => {
+                let rankStyle = "text-amber-900 font-black";
+                let rankIcon = index + 1;
+                let rowBg = "hover:bg-amber-100 transition-colors";
+                
+                if (index === 0) { 
+                    rankStyle = "text-yellow-500 text-2xl drop-shadow-md"; 
+                    rankIcon = '<i class="fa-solid fa-crown"></i>'; 
+                    rowBg = "bg-yellow-50 hover:bg-yellow-100";
+                }
+                else if (index === 1) { 
+                    rankStyle = "text-gray-400 text-xl drop-shadow-sm"; 
+                    rankIcon = '<i class="fa-solid fa-medal"></i>'; 
+                }
+                else if (index === 2) { 
+                    rankStyle = "text-amber-700 text-xl drop-shadow-sm"; 
+                    rankIcon = '<i class="fa-solid fa-medal"></i>'; 
+                }
+
+                const row = document.createElement('tr');
+                row.className = rowBg;
+                row.innerHTML = `
+                    <td class="px-4 py-4 text-center ${rankStyle}">${rankIcon}</td>
+                    <td class="px-4 py-4">
+                        <p class="font-black text-amber-950 text-sm sm:text-base">${player.name}</p>
+                        <p class="text-xs font-bold text-amber-700">Lớp: ${player.class}</p>
+                    </td>
+                    <td class="px-4 py-4 text-right font-black brand-font text-orange-600 text-xl">${player.score % 1 === 0 ? player.score : player.score.toFixed(1)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function showLeaderboard() {
+            renderLeaderboard();
+            showScreen('leaderboard');
+        }
+
+        function showLeaderboardFromLogin() {
+            renderLeaderboard();
+            showScreen('leaderboard');
+        }
+
+        function resetToLogin() {
+            stopConfetti();
+            document.getElementById('player-name').value = '';
+            document.getElementById('player-class').value = '';
+            showScreen('login');
+        }
+
+        // --- ERROR MODAL ---
+        function showErrorModal(callback = null) {
+            modalCallback = callback;
+            modal.overlay.classList.remove('hidden');
+            const content = document.getElementById('feedback-content');
+            setTimeout(() => {
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+            
+            modal.btn.onclick = () => {
+                content.classList.remove('scale-100');
+                content.classList.add('scale-95');
+                setTimeout(() => {
+                    modal.overlay.classList.add('hidden');
+                    if (modalCallback) modalCallback();
+                }, 200);
+            };
+        }
+
+        // --- HIỆU ỨNG PHÁO HOA (CONFETTI) ---
+        let confettiLoop;
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            canvas.classList.remove('hidden');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const pieces = [];
+            // Đổi màu pháo hoa hợp với tông Vàng Nâu
+            const colors = ['#f59e0b', '#fbbf24', '#d97706', '#b45309', '#fcd34d', '#ea580c'];
+
+            for (let i = 0; i < 150; i++) {
+                pieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    w: Math.random() * 12 + 6,
+                    h: Math.random() * 12 + 6,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speed: Math.random() * 4 + 2,
+                    rot: Math.random() * 360,
+                    rotSpeed: Math.random() * 5 - 2.5
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                pieces.forEach(p => {
+                    p.y += p.speed;
+                    p.rot += p.rotSpeed;
+                    if (p.y > canvas.height) p.y = -20;
+                    
+                    ctx.save();
+                    ctx.translate(p.x + p.w/2, p.y + p.h/2);
+                    ctx.rotate(p.rot * Math.PI / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+                    ctx.restore();
+                });
+                confettiLoop = requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        function stopConfetti() {
+            cancelAnimationFrame(confettiLoop);
+            document.getElementById('confetti-canvas').classList.add('hidden');
+        }
+
+        window.addEventListener('resize', () => {
+            const canvas = document.getElementById('confetti-canvas');
+            if(!canvas.classList.contains('hidden')) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        });
+
+    </script>
+</body>
+</html>
